@@ -1,7 +1,7 @@
 mudasobwa-tripper
 ================
 
-See the [component page](http://mudasobwa.github.io/mudasobwa-tripper) for more information.
+See the [component page](http://rocket-science.ru/wc/mudasobwa-tripper) for more information.
 
 ## Getting Started
 
