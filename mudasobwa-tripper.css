@@ -1,0 +1,32 @@
+:host {
+  display: block;
+}
+
+aside {
+  -webkit-box-shadow: 0 5px 10px #aaa;
+     -moz-box-shadow: 0 5px 10px #aaa;
+          box-shadow: 0 5px 10px #aaa;
+
+  float: left;
+  width: 340px;
+}
+
+article {
+  float: left;
+  padding-left: 1em;
+  border-left: 1px solid #eee;
+}
+
+header, article, aside {
+  margin: 1em 0.6em;
+}
+
+footer {
+  clear: left;
+}
+
+@media screen and (max-width: 480px) {
+  article {
+    clear: left;
+  }
+}

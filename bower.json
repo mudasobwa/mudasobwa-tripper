@@ -1,0 +1,24 @@
+{
+  "name": "mudasobwa-tripper",
+  "version": "0.0.1",
+  "keywords": [
+    "seed",
+    "polymer",
+    "web-components",
+    "image",
+    "exif",
+    "trip"
+  ],
+  "ignore": [],
+  "main": "mudasobwa-tripper.html",
+  "dependencies": {
+    "polymer": "Polymer/polymer#^0.5.1",
+    "core-ajax": "Polymer/core-ajax#^0.5.1",
+    "polymer-jsonp": "Polymer/polymer-jsonp",
+    "mudasobwa-exthen": "mudasobwa/mudasobwa-exthen#master",
+    "leaflet-map-component": "~0.1.1"
+  },
+  "devDependencies": {
+    "web-component-tester": "Polymer/web-component-tester#^2.0.0"
+  }
+}

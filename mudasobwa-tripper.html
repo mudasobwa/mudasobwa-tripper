@@ -1,0 +1,276 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../core-ajax/core-ajax.html">
+<link rel="import" href="../mudasobwa-exthen/mudasobwa-exthen.html">
+<link rel="import" href="../polymer-jsonp/polymer-jsonp.html">
+<link rel="import" href="../leaflet-map-component/leaflet-map-component.html">
+
+<!--
+Web component handles geotagged images list to build the web page
+  with all the places shown on the map and drawn on images canvases.
+
+##### Example
+
+    <mudasobwa-tripper src="data/images.json"></mudasobwa-tripper>
+
+@element mudasobwa-tripper
+@blurb Element for build the nifty web page by a list of images containing GEO tags.
+@status beta
+@homepage http://rocket-science.ru/wc/mudasobwa-tripper
+-->
+<polymer-element name="mudasobwa-tripper" attributes="src font">
+
+  <template>
+    <link rel="stylesheet" href="mudasobwa-tripper.css" />
+
+    <div class="main wrapper clearfix">
+      <header id="header">
+        <h2 id="h2"></h2>
+        <blockquote class="intro" id="intro"></blockquote>
+        <content></content>
+      </header>
+
+      <aside>
+        <leaflet-map fitToMarkers style="width:auto;height:300px" zoom="16" id="leaflet"> <!-- longitude="77.2" latitude="28.4"  -->
+        <!--
+          <leaflet-marker longitude="77.2" latitude="28.4">
+            Marker I
+          </leaflet-marker>
+          <leaflet-circle longitude="77.2" latitude="28.4" radius="300">
+            Round
+          </leaflet-circle>
+        -->
+        </leaflet-map>
+      </aside>
+
+      <article id="article">
+      <!--
+        <section>
+            <a id="id"></a>
+            <mudasobwa-exthen></mudasobwa-exthen>
+        </section>
+      -->
+      </article>
+
+      <footer></footer>
+    </div>
+
+    <core-ajax id="data"
+               auto
+							 url="{{ src }}"
+							 on-core-response="{{ contentLoaded }}"
+							 handleAs="json">
+		</core-ajax>
+    <polymer-jsonp id="jsonp" auto></polymer-jsonp>
+  </template>
+
+  <script>
+
+    Polymer({
+      /**
+       * The `src` attribute sets an initial json handler for images list.
+       *
+       * @attribute src
+       * @type string
+       * @default ''
+       */
+      src: null,
+
+      /**
+      * The `font` attribute sets a font to draw GEO data on images.
+      *
+      * @attribute font
+      * @type string
+      * @default '12px Impact, fantasy'
+      */
+      font: '12px Impact, fantasy',
+
+      /**
+      * The `pois` property holds the points images were taken at.
+      *
+      * @property pois
+      * @type Array
+      * @default []
+      */
+      pois: [],
+
+      /**
+      * The default handler for `core-ajax` element.
+      *
+      * @method contentLoaded
+      */
+      contentLoaded: function() {
+        this.header = this.$.data.response.header;
+        this.intro = this.$.data.response.intro;
+        this.images = this.$.data.response.images;
+        this.place = null;
+
+        var self = this;
+
+        document.addEventListener('mudasobwa-exthen-address', function(e) {
+          var city = e.detail.address.city || e.detail.address.town;
+          if (!self.place) {
+            self.place = city;
+          } else if (city && self.place != city) {
+            self.place = e.detail.address.country;
+          }
+          self.createMarker(e.detail.geo.lat, e.detail.geo.lon, e.detail.display);
+          if(self.images.length === self.pois.length) {
+            setTimeout(function(self) { self.placify(); }, 100, self);
+            setTimeout(function(self) { self.centrify(); }, 100, self);
+          }
+        });
+
+        document.addEventListener('mudasobwa-exthen-geotagged', function(e) {
+          // console.log('GEO: ', e.detail); // FIXME
+        });
+
+        document.addEventListener('mudasobwa-exthen-exif', function(e) {
+          if(e.detail.tags.UserComment && e.detail.tags.UserComment.length > 0) {
+            var s = '';
+            for (i = 8; i < e.detail.tags.UserComment.length; i++) {
+              if(e.detail.tags.UserComment[i] != 0) {
+                s += String.fromCharCode(i); // FIXME WTF
+              }
+            }
+          }
+        });
+
+        this.processIntro();
+        this.processImages();
+      },
+
+      /**
+      * Helper to create images by sources taken from original JSON.
+      *
+      * @method createImage
+      * @param img {string} the source to create the image for
+      */
+      createImage: function(img) {
+        var section = document.createElement('section');
+
+        var anchor = document.createElement('a');
+        anchor.setAttribute('id', 'img' + img.replace(/[\\\/\s:;,.]/g, '_'));
+        section.appendChild(anchor);
+
+        var exthen = document.createElement('mudasobwa-exthen');
+        exthen.setAttribute('src', img);
+        exthen.setAttribute('fillFont', '12px Impact');
+        section.appendChild(exthen);
+
+        this.$.article.appendChild(section);
+      },
+
+      /**
+      * Helper to create markers by GEO data taken from image EXIF.
+      *
+      * @method createMarker
+      * @param lat {float} the latitude
+      * @param lon {float} the longitude
+      * @param caption {string} the caption to draw on marker’s baloon
+      */
+      createMarker: function(lat, lon, caption) {
+        /* <leaflet-marker longitude="77.2" latitude="28.4">Marker</leaflet-marker> */
+        var marker = document.createElement('leaflet-marker');
+        marker.setAttribute('latitude', lat);
+        marker.setAttribute('longitude', lon);
+        marker.appendChild(document.createTextNode(caption));
+
+        this.$.leaflet.$.features.appendChild(marker);
+        this.$.leaflet.updateFeatures();
+
+        this.pois.push({ lat: lat * Math.PI / 180.0, lon: lon * Math.PI / 180.0 });
+      },
+
+      /**
+       * Helper to process JSON metadata: header and intro.
+       *
+       * @method processIntro
+       */
+      processIntro: function() {
+        if(this.header && this.header.length > 0) {
+          this.$.h2.appendChild(document.createTextNode(this.header));
+        } else {
+          this.$.h2.style.display = "none";
+        };
+        if(this.intro && this.intro.length > 0) {
+          this.$.intro.appendChild(document.createTextNode(this.intro));
+        } else {
+          this.$.intro.style.display = "none";
+        };
+      },
+
+      /**
+      * Helper to process images as specified in JSON.
+      *
+      * @method processImages
+      */
+      processImages: function() {
+        var self = this;
+        var delay = 500;
+        this.images.forEach(function(el){
+          setTimeout(function(self) { self.createImage(el); }, delay, self);
+          delay += 500;
+        });
+      },
+
+     /**
+      * Default handler for component initialization.
+      *
+      * More info: http://www.polymer-project.org/docs/polymer/polymer.html#lifecyclemethods
+      */
+      ready: function() {
+        this.$.jsonp.addEventListener("polymer-response",
+          function(e) {
+            try {
+              var content = e.detail.response.query.pages;
+              for (p in content) {
+                content = content[p];
+                break;
+              }
+              content = content.revisions[0]['*'];
+              //console.log(content); // FIXME
+            } catch(err) {
+              console.warn('Was unable to parse wikipedia response: ', err);
+            }
+          }
+        );
+      },
+
+     /**
+      * Helper to finally draw the leaflet map _centered_ properly.
+      */
+      centrify: function() {
+        var x, y, z;
+        x = y = z = 0;
+
+        this.pois.forEach(function(poi) {
+          x += Math.cos(poi.lat) * Math.cos(poi.lon);
+          y += Math.cos(poi.lat) * Math.sin(poi.lon);
+          z += Math.sin(poi.lat);
+        });
+
+        x /= this.pois.length;
+        y /= this.pois.length;
+        z /= this.pois.length;
+
+        this.$.leaflet.setAttribute('latitude', Math.atan2(z, Math.sqrt(x * x + y * y)) * 180.0 / Math.PI);
+        this.$.leaflet.setAttribute('longitude', Math.atan2(y, x) * 180.0 / Math.PI);
+      },
+
+     /**
+      * Helper to retrieve additional information about the place the photos were
+      *    taken from Wikipedia.
+      * @fixme EXPERIMENTAL
+      */
+      placify: function() {
+        if(this.place && this.place.length > 0) {
+          var url = 'http://en.wikipedia.org/w/api.php?format=json&action=query&titles=' + encodeURIComponent(this.place.split(/\s+/).join('_')) + '&prop=revisions&rvprop=content';
+          this.$.jsonp.url = url + '&callback=';
+        }
+      }
+
+    });
+
+  </script>
+
+</polymer-element>

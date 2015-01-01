@@ -1,0 +1,42 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+  <title>mudasobwa-tripper Demo</title>
+
+  <script src="../webcomponentsjs/webcomponents.js"></script>
+  <link rel="import" href="mudasobwa-tripper.html">
+
+</head>
+<body unresolved>
+
+  <h2>mudasobwa-tripper</h2>
+
+  <p>Web component reads the images list (with optional header and intro)
+    from JSON file:</p>
+
+    <code><pre>
+      {
+        "header": "Sant Feliu de Guíxols",
+        "intro": "Sant Feliu de Guíxols (Catalan pronunciation: [ˈsam fəˈɫiw ðə ˈɣiʃuɫs ...",
+        "images": [
+          "i/9c8e7dcc4c084dcaf0f33d38d9d51a02-600.jpg",
+          "i/dc3027c3d68d44691aaebe3f874812da-600.jpg",
+          "i/6a205e45b266c6f812f8a8ff61b17e58-600.jpg"
+        ]
+      }
+    </pre></code>
+
+  <p>...and displays everything on the page, using
+    <code>mudasobwa-exthen</code> component.</p>
+
+  <code><pre>
+    &lt;mudasobwa-tripper src="data/images.json">
+    &lt;/mudasobwa-tripper>
+  </pre></code>
+
+  <mudasobwa-tripper src="data/images.json" style="width:860px;border:1px solid #ddd;background-color:#f9f9f9;"></mudasobwa-tripper>
+
+</body>
+</html>
