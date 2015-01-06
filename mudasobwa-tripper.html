@@ -1,8 +1,11 @@
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../core-ajax/core-ajax.html">
 <link rel="import" href="../mudasobwa-exthen/mudasobwa-exthen.html">
+<link rel="import" href="../mudasobwa-gypsy-trick/mudasobwa-gypsy-trick.html">
 <link rel="import" href="../polymer-jsonp/polymer-jsonp.html">
 <link rel="import" href="../leaflet-map-component/leaflet-map-component.html">
+<link rel="import" href="../leaflet-map-component/leaflet-circle-component.html">
+<link rel="import" href="../leaflet-map-component/leaflet-polyline-component.html">
 
 <!--
 Web component handles geotagged images list to build the web page
@@ -17,38 +20,61 @@ Web component handles geotagged images list to build the web page
 @status beta
 @homepage http://rocket-science.ru/wc/mudasobwa-tripper
 -->
-<polymer-element name="mudasobwa-tripper" attributes="src font">
+<polymer-element name="mudasobwa-tripper" attributes="src font track markers images header intro drawTrack centerLat centerLon getWiki">
 
   <template>
     <link rel="stylesheet" href="mudasobwa-tripper.css" />
 
+    <mudasobwa-gypsy-trick id="gypsy" src="{{ track }}"
+                           on-mudasobwa-gypsy-trick-points-ready="{{ trackReady }}">
+    </mudasobwa-gypsy-trick>
+
     <div class="main wrapper clearfix">
       <header id="header">
-        <h2 id="h2"></h2>
-        <blockquote class="intro" id="intro"></blockquote>
+        <h2 id="h2">{{ header }}</h2>
+        <blockquote class="intro" id="intro">{{ intro }}</blockquote>
         <content></content>
       </header>
 
-      <aside>
-        <leaflet-map fitToMarkers style="width:auto;height:300px" zoom="16" id="leaflet"> <!-- longitude="77.2" latitude="28.4"  -->
-        <!--
-          <leaflet-marker longitude="77.2" latitude="28.4">
-            Marker I
-          </leaflet-marker>
-          <leaflet-circle longitude="77.2" latitude="28.4" radius="300">
-            Round
-          </leaflet-circle>
-        -->
+      <aside style="position:relative;">
+        <leaflet-map fitToMarkers style="width:auto;height:300px" zoom="14" id="leaflet" latitude="{{ centerLat }}" longitude="{{ centerLon }}">
+          <leaflet-circle latitude="{{ centerLat }}" longitude="{{ centerLon }}" radius="300">★</leaflet-circle>
+          <template if="{{ drawTrack }}">
+            <leaflet-polyline>
+              <template repeat="{{ tp in trackpoints }}">
+                <leaflet-point latitude="{{ tp.lat }}" longitude="{{ tp.lon }}">★</leaflet-point>
+              </template>
+            </leaflet-polyline>
+          </template>
+          <template if="{{ markers }}">
+            <template repeat="{{ mrk in markers }}">
+              <leaflet-marker riseOnHover longitude="{{ mrk.lon }}" latitude="{{ mrk.lat }}">
+                <figure style="height:100px;margin:0;padding:0px;">
+                  <!-- FIXME more appropriate cropping -->
+                  <img src="{{ mrk.image.src }}"
+                       style="transform:rotate({{ mrk.orientation | rotatePreview }});float:left;cursor:pointer;margin-right:10px;width:100px;height:100px;"
+                       on-click="{{ mrk.image.src | scrollToImage }}">
+                       <!-- FIXME FCUK onClick make it working -->
+                  <figcaption>{{ mrk.text }}</figcaption>
+                </figure>
+              </leaflet-marker>
+            </template>
+          </template>
         </leaflet-map>
       </aside>
 
       <article id="article">
-      <!--
         <section>
-            <a id="id"></a>
-            <mudasobwa-exthen></mudasobwa-exthen>
+          <template if="{{ images }}">
+            <template repeat="{{ img in images }}">
+              <mudasobwa-exthen id="{{ img | idify }}" src="{{ img }}" fillFont="{{ font }}"
+                        on-mudasobwa-exthen-address="{{ onAddress }}"
+                        on-mudasobwa-exthen-timestamp="{{ onTimestamp }}"
+                        on-mudasobwa-exthen-geotagged="{{ onGeotagged }}">
+              </mudasobwa-exthen> <!-- autoAddress -->
+            </template>
+          </template>
         </section>
-      -->
       </article>
 
       <footer></footer>
@@ -60,7 +86,7 @@ Web component handles geotagged images list to build the web page
 							 on-core-response="{{ contentLoaded }}"
 							 handleAs="json">
 		</core-ajax>
-    <polymer-jsonp id="jsonp" auto></polymer-jsonp>
+    <polymer-jsonp id="jsonp" auto response="{{ wiki }}"></polymer-jsonp>
   </template>
 
   <script>
@@ -85,13 +111,115 @@ Web component handles geotagged images list to build the web page
       font: '12px Impact, fantasy',
 
       /**
-      * The `pois` property holds the points images were taken at.
+      * The `drawTrack` attribute denotes whether the track should be drawn on map.
       *
-      * @property pois
-      * @type Array
-      * @default []
+      * @attribute drawTrack
+      * @type bool
+      * @default false
       */
-      pois: [],
+      drawTrack: false,
+
+      /**
+      * The `getWiki` attribute denotes whether the wiki article for the place
+      *     photos were taken should be downloaded.
+      *
+      * @attribute getWiki
+      * @type bool
+      * @default false
+      */
+      getWiki: false,
+
+      /**
+      * The `markers` property holds the points images were taken at.
+      *
+      * @attribute markers
+      * @type Array
+      * @default null
+      */
+      markers: null,
+      _markers: [],
+
+      created: function() {
+        this.trackpoints = [];    // initialize and hint type to an object
+        this.metadata = {};
+      },
+
+      idify: function(src) {
+        return src && src.replace(/[\\\/\-\s%:;,.]/g, '_');
+      },
+
+      scrollToImage: function(src) {
+        return function(src) {
+          return function() {
+            document.getElementById(src).scrollIntoView();
+          };
+        }(this.idify(src));
+      },
+
+      rotatePreview: function(orientation) {
+        switch(orientation) {
+          case 6: return '90deg';
+          case 7: return '180deg';
+          case 8: return '270deg';
+        }
+        return '0deg';
+      },
+
+      trackReady: function(e) {
+        if (this.drawTrack) {
+          this.trackpoints = e.detail.points;
+        }
+      },
+
+      updater: function() {
+        if (typeof this.updateFunctionID == "number") {
+          window.clearTimeout(this.updateFunctionID);
+          delete this.updateFunctionID;
+        };
+
+        this.updateFunctionID = window.setTimeout(function(self) {
+          self.markers = self._markers;
+          self.header = self.metadata.cities.join(' & ');
+          if (this.getWiki) {
+            setTimeout(function(self) { self.placify(); }, 100, self);
+          }
+          setTimeout(function(self) { self.centrify(); }, 100, self);
+        }, 300, this);
+      },
+
+      onAddress: function(e) {
+        var city = e.detail.location.city || e.detail.location.town;
+        if (!this.metadata.cities) {
+          this.metadata.cities = [city];
+        } else {
+          if (!this.metadata.cities.some(function(element, index, array) {
+            return element == city;
+          })) {
+            this.metadata.cities.push(city);
+          };
+        }
+
+        this._markers.push({
+          lat: e.detail.geo.lat,
+          lon: e.detail.geo.lon,
+          text: e.detail.address,
+          image: e.detail.image,
+          orientation: e.detail.orientation
+        });
+
+        this.updater();
+      },
+
+      onTimestamp: function(e) {
+        var src = e.path[0];
+        var coord = this.$.gypsy.getCoordForTime(e.detail.datetime);
+        src.setAttribute('gypsy', coord.lat + ',' + coord.lon);
+      },
+
+      onGeotagged: function(e) {
+        var src = e.path[0];
+        src.loadAddress();
+      },
 
       /**
       * The default handler for `core-ajax` element.
@@ -99,30 +227,12 @@ Web component handles geotagged images list to build the web page
       * @method contentLoaded
       */
       contentLoaded: function() {
-        this.header = this.$.data.response.header;
-        this.intro = this.$.data.response.intro;
-        this.images = this.$.data.response.images;
-        this.place = null;
+        this.header = this.header || this.$.data.response.header;
+        this.intro = this.intro || this.$.data.response.intro;
+        this.images = this.images || this.$.data.response.images;
+        this.track = this.track || this.$.data.response.track;
 
         var self = this;
-
-        document.addEventListener('mudasobwa-exthen-address', function(e) {
-          var city = e.detail.address.city || e.detail.address.town;
-          if (!self.place) {
-            self.place = city;
-          } else if (city && self.place != city) {
-            self.place = e.detail.address.country;
-          }
-          self.createMarker(e.detail.geo.lat, e.detail.geo.lon, e.detail.display);
-          if(self.images.length === self.pois.length) {
-            setTimeout(function(self) { self.placify(); }, 100, self);
-            setTimeout(function(self) { self.centrify(); }, 100, self);
-          }
-        });
-
-        document.addEventListener('mudasobwa-exthen-geotagged', function(e) {
-          // console.log('GEO: ', e.detail); // FIXME
-        });
 
         document.addEventListener('mudasobwa-exthen-exif', function(e) {
           if(e.detail.tags.UserComment && e.detail.tags.UserComment.length > 0) {
@@ -133,83 +243,6 @@ Web component handles geotagged images list to build the web page
               }
             }
           }
-        });
-
-        this.processIntro();
-        this.processImages();
-      },
-
-      /**
-      * Helper to create images by sources taken from original JSON.
-      *
-      * @method createImage
-      * @param img {string} the source to create the image for
-      */
-      createImage: function(img) {
-        var section = document.createElement('section');
-
-        var anchor = document.createElement('a');
-        anchor.setAttribute('id', 'img' + img.replace(/[\\\/\s:;,.]/g, '_'));
-        section.appendChild(anchor);
-
-        var exthen = document.createElement('mudasobwa-exthen');
-        exthen.setAttribute('src', img);
-        exthen.setAttribute('fillFont', '12px Impact');
-        section.appendChild(exthen);
-
-        this.$.article.appendChild(section);
-      },
-
-      /**
-      * Helper to create markers by GEO data taken from image EXIF.
-      *
-      * @method createMarker
-      * @param lat {float} the latitude
-      * @param lon {float} the longitude
-      * @param caption {string} the caption to draw on marker’s baloon
-      */
-      createMarker: function(lat, lon, caption) {
-        /* <leaflet-marker longitude="77.2" latitude="28.4">Marker</leaflet-marker> */
-        var marker = document.createElement('leaflet-marker');
-        marker.setAttribute('latitude', lat);
-        marker.setAttribute('longitude', lon);
-        marker.appendChild(document.createTextNode(caption));
-
-        this.$.leaflet.$.features.appendChild(marker);
-        this.$.leaflet.updateFeatures();
-
-        this.pois.push({ lat: lat * Math.PI / 180.0, lon: lon * Math.PI / 180.0 });
-      },
-
-      /**
-       * Helper to process JSON metadata: header and intro.
-       *
-       * @method processIntro
-       */
-      processIntro: function() {
-        if(this.header && this.header.length > 0) {
-          this.$.h2.appendChild(document.createTextNode(this.header));
-        } else {
-          this.$.h2.style.display = "none";
-        };
-        if(this.intro && this.intro.length > 0) {
-          this.$.intro.appendChild(document.createTextNode(this.intro));
-        } else {
-          this.$.intro.style.display = "none";
-        };
-      },
-
-      /**
-      * Helper to process images as specified in JSON.
-      *
-      * @method processImages
-      */
-      processImages: function() {
-        var self = this;
-        var delay = 500;
-        this.images.forEach(function(el){
-          setTimeout(function(self) { self.createImage(el); }, delay, self);
-          delay += 500;
         });
       },
 
@@ -228,7 +261,7 @@ Web component handles geotagged images list to build the web page
                 break;
               }
               content = content.revisions[0]['*'];
-              //console.log(content); // FIXME
+              console.log(content); // FIXME
             } catch(err) {
               console.warn('Was unable to parse wikipedia response: ', err);
             }
@@ -243,18 +276,21 @@ Web component handles geotagged images list to build the web page
         var x, y, z;
         x = y = z = 0;
 
-        this.pois.forEach(function(poi) {
+        this.markers.forEach(function(mrk) {
+          var poi = { lat: mrk.lat * Math.PI / 180.0, lon: mrk.lon * Math.PI / 180.0 };
           x += Math.cos(poi.lat) * Math.cos(poi.lon);
           y += Math.cos(poi.lat) * Math.sin(poi.lon);
           z += Math.sin(poi.lat);
         });
 
-        x /= this.pois.length;
-        y /= this.pois.length;
-        z /= this.pois.length;
+        x /= this.markers.length;
+        y /= this.markers.length;
+        z /= this.markers.length;
 
-        this.$.leaflet.setAttribute('latitude', Math.atan2(z, Math.sqrt(x * x + y * y)) * 180.0 / Math.PI);
-        this.$.leaflet.setAttribute('longitude', Math.atan2(y, x) * 180.0 / Math.PI);
+        this.$.leaflet.fitToMarkers = false;
+        this.centerLat = Math.atan2(z, Math.sqrt(x * x + y * y)) * 180.0 / Math.PI;
+        this.centerLon = Math.atan2(y, x) * 180.0 / Math.PI;
+        this.$.leaflet.fitToMarkers = true;
       },
 
      /**
@@ -263,8 +299,8 @@ Web component handles geotagged images list to build the web page
       * @fixme EXPERIMENTAL
       */
       placify: function() {
-        if(this.place && this.place.length > 0) {
-          var url = 'http://en.wikipedia.org/w/api.php?format=json&action=query&titles=' + encodeURIComponent(this.place.split(/\s+/).join('_')) + '&prop=revisions&rvprop=content';
+        if(this.metadata.cities && this.metadata.cities.length > 0) {
+          var url = 'http://en.wikipedia.org/w/api.php?format=json&action=query&titles=' + encodeURIComponent(this.metadata.cities[0]) + '&prop=revisions&rvprop=content';
           this.$.jsonp.url = url + '&callback=';
         }
       }

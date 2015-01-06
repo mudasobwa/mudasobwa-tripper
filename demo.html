@@ -18,25 +18,27 @@
 
     <code><pre>
       {
-        "header": "Sant Feliu de Guíxols",
-        "intro": "Sant Feliu de Guíxols (Catalan pronunciation: [ˈsam fəˈɫiw ðə ˈɣiʃuɫs ...",
+        "track": "data/baywindows.xml",
         "images": [
-          "i/9c8e7dcc4c084dcaf0f33d38d9d51a02-600.jpg",
-          "i/dc3027c3d68d44691aaebe3f874812da-600.jpg",
-          "i/6a205e45b266c6f812f8a8ff61b17e58-600.jpg"
+          "i/600_20150104_114911.jpg",
+          "i/600_20150104_114942.jpg",
+          "i/600_20150104_115011.jpg",
+          ...
         ]
       }
     </pre></code>
 
   <p>...and displays everything on the page, using
-    <code>mudasobwa-exthen</code> component.</p>
+    <code>mudasobwa-tripper</code> component.</p>
 
   <code><pre>
-    &lt;mudasobwa-tripper src="data/images.json">
+    &lt;mudasobwa-tripper src="data/images.json" drawTrack>
     &lt;/mudasobwa-tripper>
   </pre></code>
 
-  <mudasobwa-tripper src="data/images.json" style="width:860px;border:1px solid #ddd;background-color:#f9f9f9;"></mudasobwa-tripper>
+  <mudasobwa-tripper src="data/images.json" drawTrack
+                     style="width:1040px;border:1px solid #ddd;background-color:#f9f9f9;">
+  </mudasobwa-tripper>
 
 </body>
 </html>
