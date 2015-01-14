@@ -1,11 +1,14 @@
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../core-ajax/core-ajax.html">
+<link rel="import" href="../paper-tabs/paper-tabs.html">
+<link rel="import" href="../core-animated-pages/core-animated-pages.html">
 <link rel="import" href="../mudasobwa-exthen/mudasobwa-exthen.html">
 <link rel="import" href="../mudasobwa-gypsy-trick/mudasobwa-gypsy-trick.html">
 <link rel="import" href="../polymer-jsonp/polymer-jsonp.html">
-<link rel="import" href="../leaflet-map-component/leaflet-map-component.html">
-<link rel="import" href="../leaflet-map-component/leaflet-circle-component.html">
-<link rel="import" href="../leaflet-map-component/leaflet-polyline-component.html">
+<link rel="import" href="../leaflet-map/leaflet-map.html">
+<link rel="import" href="../leaflet-map/leaflet-marker.html">
+<link rel="import" href="../leaflet-map/leaflet-circle.html">
+<link rel="import" href="../leaflet-map/leaflet-polyline.html">
 
 <!--
 Web component handles geotagged images list to build the web page
@@ -36,7 +39,7 @@ Web component handles geotagged images list to build the web page
         <content></content>
       </header>
 
-      <aside style="position:relative;">
+      <aside>
         <leaflet-map fitToMarkers style="width:auto;height:300px" zoom="14" id="leaflet" latitude="{{ centerLat }}" longitude="{{ centerLon }}">
           <leaflet-circle latitude="{{ centerLat }}" longitude="{{ centerLon }}" radius="300">★</leaflet-circle>
           <template if="{{ drawTrack }}">
@@ -48,12 +51,12 @@ Web component handles geotagged images list to build the web page
           </template>
           <template if="{{ markers }}">
             <template repeat="{{ mrk in markers }}">
-              <leaflet-marker riseOnHover longitude="{{ mrk.lon }}" latitude="{{ mrk.lat }}">
+              <leaflet-marker riseOnHover name="{{ img | idify }}" longitude="{{ mrk.lon }}" latitude="{{ mrk.lat }}" on-click="{{ scrollToImage }}">
                 <figure style="height:100px;margin:0;padding:0px;">
                   <!-- FIXME more appropriate cropping -->
                   <img src="{{ mrk.image.src }}"
                        style="transform:rotate({{ mrk.orientation | rotatePreview }});float:left;cursor:pointer;margin-right:10px;width:100px;height:100px;"
-                       on-click="{{ mrk.image.src | scrollToImage }}">
+                       >
                        <!-- FIXME FCUK onClick make it working -->
                   <figcaption>{{ mrk.text }}</figcaption>
                 </figure>
@@ -64,15 +67,24 @@ Web component handles geotagged images list to build the web page
       </aside>
 
       <article id="article">
-        <section>
-          <template if="{{ images }}">
-            <template repeat="{{ img in images }}">
-              <mudasobwa-exthen id="{{ img | idify }}" src="{{ img }}" fillFont="{{ font }}"
-                        on-mudasobwa-exthen-address="{{ onAddress }}"
-                        on-mudasobwa-exthen-timestamp="{{ onTimestamp }}"
-                        on-mudasobwa-exthen-geotagged="{{ onGeotagged }}">
-              </mudasobwa-exthen> <!-- autoAddress -->
-            </template>
+        <section layout vertical is="auto-binding">
+          <template id="tabsnpages" if="{{ images }}">
+            <paper-tabs id="tabs" selected="{{ selectedtab }}" on-core-select="{{ onCoreSelected }}">
+              <template repeat="{{ img in images }}">
+                <paper-tab inline flex center-center horizontal layout>★</paper-tab>
+              </template>
+            </paper-tabs>
+
+            <core-animated-pages id="pages" selected="{{ selectedtab }}" flex>
+              <template repeat="{{ img in images }}">
+                <mudasobwa-exthen one center-center vertical layout id="{{ img | idify }}" src="{{ img }}" autoRedraw
+                    fillFont="{{ font }}"
+                    on-mudasobwa-exthen-address="{{ onAddress }}"
+                    on-mudasobwa-exthen-timestamp="{{ onTimestamp }}"
+                    on-mudasobwa-exthen-geotagged="{{ onGeotagged }}">
+                </mudasobwa-exthen> <!-- autoAddress -->
+              </template>
+            </core-pages>
           </template>
         </section>
       </article>
@@ -138,10 +150,15 @@ Web component handles geotagged images list to build the web page
       */
       markers: null,
       _markers: [],
+      selectedtab: 0,
 
       created: function() {
         this.trackpoints = [];    // initialize and hint type to an object
         this.metadata = {};
+      },
+
+      domReady: function() {
+        console.log(document.querySelector('paper-tabs'));
       },
 
       idify: function(src) {
@@ -149,11 +166,9 @@ Web component handles geotagged images list to build the web page
       },
 
       scrollToImage: function(src) {
-        return function(src) {
-          return function() {
-            document.getElementById(src).scrollIntoView();
-          };
-        }(this.idify(src));
+        console.log('Called for: ', src)
+        console.log('Will scroll into: ', this.idify(src));
+        document.getElementById(this.idify(src)).scrollIntoView();
       },
 
       rotatePreview: function(orientation) {
@@ -303,6 +318,11 @@ Web component handles geotagged images list to build the web page
           var url = 'http://en.wikipedia.org/w/api.php?format=json&action=query&titles=' + encodeURIComponent(this.metadata.cities[0]) + '&prop=revisions&rvprop=content';
           this.$.jsonp.url = url + '&callback=';
         }
+      },
+
+      onCoreSelected: function(e) {
+        console.log(e);
+//        this.$.pages.selected = this.$.tabs.selected;
       }
 
     });
