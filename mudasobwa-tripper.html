@@ -69,9 +69,13 @@ Web component handles geotagged images list to build the web page
       <article id="article">
         <section layout vertical is="auto-binding">
           <template id="tabsnpages" if="{{ images }}">
-            <paper-tabs id="tabs" selected="{{ selectedtab }}" on-core-select="{{ onCoreSelected }}">
-              <template repeat="{{ img in images }}">
-                <paper-tab inline flex center-center horizontal layout>★</paper-tab>
+            <paper-tabs id="tabs" selected="{{ selectedtab }}" on-core-select="{{ onCoreSelected }}" scrollable>
+              <template repeat="{{ img in exthens | sortAsImages(images) }}">
+                <paper-tab inline flex center-center horizontal layout>
+                  <img src="{{ img.src }}"
+                       style="transform:rotate({{ img.orientation | rotatePreview }});cursor:pointer;max-width:100px;max-height:100px;"
+                  >
+                </paper-tab>
               </template>
             </paper-tabs>
 
@@ -79,6 +83,7 @@ Web component handles geotagged images list to build the web page
               <template repeat="{{ img in images }}">
                 <mudasobwa-exthen one center-center vertical layout id="{{ img | idify }}" src="{{ img }}" autoRedraw
                     fillFont="{{ font }}"
+                    on-mudasobwa-exthen-exif="{{ onExif }}"
                     on-mudasobwa-exthen-address="{{ onAddress }}"
                     on-mudasobwa-exthen-timestamp="{{ onTimestamp }}"
                     on-mudasobwa-exthen-geotagged="{{ onGeotagged }}">
@@ -102,6 +107,11 @@ Web component handles geotagged images list to build the web page
   </template>
 
   <script>
+    PolymerExpressions.prototype.sortAsImages = function(array, images) {
+      return array && array.sort(function(a, b) {
+        return images.indexOf(a.src) - images.indexOf(b.src);
+      });
+    };
 
     Polymer({
       /**
@@ -148,17 +158,18 @@ Web component handles geotagged images list to build the web page
       * @type Array
       * @default null
       */
-      markers: null,
-      _markers: [],
       selectedtab: 0,
+
+      publish : {
+        markers : { value: null, reflect: true },
+        exthens : { value: null, reflect: true },
+      },
 
       created: function() {
         this.trackpoints = [];    // initialize and hint type to an object
         this.metadata = {};
-      },
-
-      domReady: function() {
-        console.log(document.querySelector('paper-tabs'));
+        this._exthens = [];
+        this._markers = [];
       },
 
       idify: function(src) {
@@ -186,20 +197,32 @@ Web component handles geotagged images list to build the web page
         }
       },
 
-      updater: function() {
-        if (typeof this.updateFunctionID == "number") {
-          window.clearTimeout(this.updateFunctionID);
-          delete this.updateFunctionID;
-        };
+      updateExthens: function() {
+        this.job('mudasobwa-tripper-exthen-updater', function() {
+          this.exthens = this._exthens;
+        }, 2000);
+      },
 
-        this.updateFunctionID = window.setTimeout(function(self) {
-          self.markers = self._markers;
-          self.header = self.metadata.cities.join(' & ');
+      // FIXME Add onLoaded event to mudasobwa-exthen
+      onExif: function(e) {
+        this._exthens.push({
+          src: e.detail.src,
+          image: e.detail.image,
+          orientation: e.detail.tags.Orientation
+        });
+
+        this.updateExthens();
+      },
+
+      updateMarkers: function() {
+        this.job('mudasobwa-tripper-marker-updater', function() {
+          this.markers = this._markers;
+          this.header = this.metadata.cities.join(' & ');
           if (this.getWiki) {
-            setTimeout(function(self) { self.placify(); }, 100, self);
+            this.async(function() { this.placify(); });
           }
-          setTimeout(function(self) { self.centrify(); }, 100, self);
-        }, 300, this);
+          this.async(function() { this.centrify(); });
+        }, 500);
       },
 
       onAddress: function(e) {
@@ -222,7 +245,7 @@ Web component handles geotagged images list to build the web page
           orientation: e.detail.orientation
         });
 
-        this.updater();
+        this.updateMarkers();
       },
 
       onTimestamp: function(e) {
@@ -321,7 +344,7 @@ Web component handles geotagged images list to build the web page
       },
 
       onCoreSelected: function(e) {
-        console.log(e);
+        // console.log(e);
 //        this.$.pages.selected = this.$.tabs.selected;
       }
 
