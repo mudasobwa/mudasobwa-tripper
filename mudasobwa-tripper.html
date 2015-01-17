@@ -1,7 +1,7 @@
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../core-ajax/core-ajax.html">
 <link rel="import" href="../paper-tabs/paper-tabs.html">
-<link rel="import" href="../core-animated-pages/core-animated-pages.html">
+<link rel="import" href="../core-pages/core-pages.html">
 <link rel="import" href="../mudasobwa-exthen/mudasobwa-exthen.html">
 <link rel="import" href="../mudasobwa-gypsy-trick/mudasobwa-gypsy-trick.html">
 <link rel="import" href="../polymer-jsonp/polymer-jsonp.html">
@@ -66,9 +66,9 @@ Web component handles geotagged images list to build the web page
         </leaflet-map>
       </aside>
 
-      <article id="article">
-        <section layout vertical is="auto-binding">
-          <template id="tabsnpages" if="{{ images }}">
+      <article id="article" is="auto-binding">
+        <template id="tabsnpages" if="{{ images }}">
+          <section layout vertical>
             <paper-tabs id="tabs" selected="{{ selectedtab }}" on-core-select="{{ onCoreSelected }}" scrollable>
               <template repeat="{{ img in exthens | sortAsImages(images) }}">
                 <paper-tab inline flex center-center horizontal layout>
@@ -78,21 +78,22 @@ Web component handles geotagged images list to build the web page
                 </paper-tab>
               </template>
             </paper-tabs>
-
-            <core-animated-pages id="pages" selected="{{ selectedtab }}" flex>
+          </section>
+          <section layout vertical id="corecontainer" style="height:{{ sizes.h + 40 }}px;">
+            <core-pages id="pages" selected="{{ selectedtab }}" flex>
               <template repeat="{{ img in images }}">
                 <mudasobwa-exthen one center-center vertical layout id="{{ img | idify }}" src="{{ img }}" autoRedraw
-                    fillFont="{{ font }}"
+                    fillFont="{{ font }}" sizes="{{ sizes }}"
                     on-mudasobwa-exthen-exif="{{ onExif }}"
                     on-mudasobwa-exthen-address="{{ onAddress }}"
                     on-mudasobwa-exthen-timestamp="{{ onTimestamp }}"
                     on-mudasobwa-exthen-geotagged="{{ onGeotagged }}">
                 </mudasobwa-exthen> <!-- autoAddress -->
               </template>
-            </core-pages>
-          </template>
+          </core-pages>
         </section>
-      </article>
+      </template>
+    </article>
 
       <footer></footer>
     </div>

@@ -1,6 +1,6 @@
 {
   "name": "mudasobwa-tripper",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "keywords": [
     "seed",
     "polymer",
@@ -12,15 +12,19 @@
   "ignore": [],
   "main": "mudasobwa-tripper.html",
   "dependencies": {
-    "polymer": "Polymer/polymer#^0.5.2",
-    "core-ajax": "Polymer/core-ajax#^0.5.2",
+    "polymer": "Polymer/polymer#~0.5.2",
+    "core-ajax": "Polymer/core-ajax#~0.5.2",
+    "core-toolbar": "Polymer/core-toolbar#~0.5.2",
+    "core-pages": "Polymer/core-pages#~0.5.2",
+    "code-explainer": "Polymer/code-explainer#~0.5.2",
+    "paper-icon-button": "Polymer/paper-icon-button#~0.5.2",
+    "core-media-query": "Polymer/core-media-query#~0.5.2",
+    "paper-tabs": "Polymer/paper-tabs#~0.5.2",
+    "paper-input": "Polymer/paper-input#~0.5.2",
     "polymer-jsonp": "Polymer/polymer-jsonp",
     "mudasobwa-exthen": "mudasobwa/mudasobwa-exthen#master",
     "mudasobwa-gypsy-trick": "mudasobwa/mudasobwa-gypsy-trick#master",
-    "leaflet-map": "nhnb/leaflet-map#~0.3.1",
-    "paper-tabs": "Polymer/paper-tabs#~0.5.2",
-    "core-pages": "Polymer/core-pages#~0.5.2",
-    "core-animated-pages": "Polymer/core-animated-pages#~0.5.2"
+    "leaflet-map": "nhnb/leaflet-map#~0.3.1"
   },
   "devDependencies": {
     "web-component-tester": "Polymer/web-component-tester#^2.0.0"

@@ -6,35 +6,61 @@
   <title>mudasobwa-tripper Demo</title>
 
   <script src="../webcomponentsjs/webcomponents.js"></script>
+  <link rel="import" href="../core-icons/core-icons.html">
+  <link rel="import" href="../core-toolbar/core-toolbar.html">
+  <link rel="import" href="../core-media-query/core-media-query.html">
+  <link rel="import" href="../paper-icon-button/paper-icon-button.html">
+  <link rel="import" href="../paper-input/paper-input.html">
+  <link rel="import" href="../code-explainer/code-explainer.html">
   <link rel="import" href="mudasobwa-tripper.html">
 
+  <style>
+  * { margin: 0; padding: 0;}
+  core-toolbar {
+    color: #f1f1f1;
+    fill: #f1f1f1;
+  }
+  body { max-width: 1200px; margin: auto; }
+  </style>
 </head>
 <body unresolved vertical layout>
 
-  <h2>mudasobwa-tripper</h2>
+  <core-toolbar style="background: #595a70;">
+    <paper-icon-button icon="menu"></paper-icon-button>
+    <span flex>mudasobwa-tripper</span>
+    <paper-icon-button icon="refresh"></paper-icon-button>
+    <paper-icon-button icon="more-vert"></paper-icon-button>
+  </core-toolbar>
 
-  <p>Web component reads the images list (with optional header and intro)
-    from JSON file:</p>
+  <code-explainer label="Web component reads the images list (with optional header and intro) from JSON file">
+    <template>
+      <script type="text/template">
+        <mudasobwa-tripper
+          [start-source]src="data/images.json"[end-source]
+          [start-draw]drawTrack[end-draw]
+        >
+        </mudasobwa-tripper>
+      </script>
+    </template>
+    <code-explainer-info sec="source" label="JSON with image list and (optional) track">
+      <code><pre>
+{
+  "track": "data/baywindows.xml",
+  "images": [
+    "i/600_20150104_114911.jpg",
+    "i/600_20150104_114942.jpg",
+    "i/600_20150104_115011.jpg",
+    ...
+  ]
+}
+      </pre></code>
+    </code-explainer-info>
+    <code-explainer-info sec="draw" label="Draw track automagically">
+      When set the element will retrieve all the available locations and draw track on map.
+    </code-explainer-info>
+  </code-explainer>
 
-    <code><pre>
-      {
-        "track": "data/baywindows.xml",
-        "images": [
-          "i/600_20150104_114911.jpg",
-          "i/600_20150104_114942.jpg",
-          "i/600_20150104_115011.jpg",
-          ...
-        ]
-      }
-    </pre></code>
-
-  <p>...and displays everything on the page, using
-    <code>mudasobwa-tripper</code> component.</p>
-
-  <code><pre>
-    &lt;mudasobwa-tripper src="data/images.json" drawTrack>
-    &lt;/mudasobwa-tripper>
-  </pre></code>
+  <br>
 
   <mudasobwa-tripper src="data/images.json" drawTrack
     style="width:1040px;border:1px solid #ddd;background-color:#f9f9f9;">
